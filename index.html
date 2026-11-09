@@ -1,1 +1,1555 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulator Presiden Republik Indonesia v2.0 - Archipelago Realism Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Retro Pixel Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Retro Pixel Art Theme & Custom UI Elements */
+        * {
+            image-rendering: pixelated;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            font-family: 'Silkscreen', monospace;
+            background-color: #070a12;
+            color: #f3f4f6;
+        }
+        .font-pixel-heading {
+            font-family: 'Press Start 2P', cursive;
+        }
+        /* Pixel Border Helpers */
+        .pixel-panel {
+            background-color: #121826;
+            border: 4px solid #000;
+            box-shadow: 
+                inset -4px -4px 0px 0px #070a12, 
+                inset 4px 4px 0px 0px #223049,
+                0px 6px 0px 0px rgba(0,0,0,0.6);
+        }
+        .pixel-card {
+            background-color: #1a2336;
+            border: 3px solid #000;
+            box-shadow: inset -3px -3px 0px 0px #0f172a, inset 3px 3px 0px 0px #334155;
+        }
+        .pixel-btn {
+            font-family: 'Press Start 2P', cursive;
+            border: 3px solid #000;
+            box-shadow: inset -3px -3px 0px 0px rgba(0,0,0,0.5), inset 3px 3px 0px 0px rgba(255,255,255,0.25);
+            transition: all 0.05s ease;
+            cursor: pointer;
+        }
+        .pixel-btn:hover:not(:disabled) {
+            filter: brightness(1.2);
+        }
+        .pixel-btn:active:not(:disabled) {
+            transform: translate(2px, 2px);
+            box-shadow: inset 2px 2px 0px 0px rgba(0,0,0,0.5);
+        }
+        .pixel-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+        /* Custom Progress Bars */
+        .pixel-progress-bg {
+            background-color: #070a12;
+            border: 2px solid #000;
+            height: 14px;
+            position: relative;
+        }
+        .pixel-progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        /* Marquee News Ticker */
+        .ticker-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .ticker-move {
+            display: inline-block;
+            animation: ticker 28s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(100%, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+        /* Map Canvas Glow & Cursor */
+        #canvas-map {
+            cursor: crosshair;
+        }
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070a12;
+            border: 1px solid #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border: 1px solid #000;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 md:p-3 text-xs sm:text-sm">
 
+    <!-- TOP DASHBOARD: METRICS & CONTROLS -->
+    <header class="pixel-panel p-3 mb-2 bg-gradient-to-r from-red-950 via-slate-900 to-slate-950 border-red-700">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-800 pb-2 mb-2">
+            <!-- Title & Term Info -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <span class="text-2xl sm:text-3xl animate-pulse">🇮🇩</span>
+                <div>
+                    <h1 class="font-pixel-heading text-amber-400 text-xs sm:text-sm md:text-base tracking-wider flex items-center gap-2">
+                        SIMULATOR PRESIDEN RI <span class="bg-red-700 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">v3.0 AUTO-SAVE</span>
+                    </h1>
+                    <p class="text-slate-400 text-[11px] mt-0.5">Periode Jabatan: <span id="display-date" class="text-white font-bold">Bulan 1 / 60 (Nov 2024)</span></p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <!-- Save Status Indicator Badge -->
+                <span id="save-status-badge" class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-[10px] px-2 py-1 rounded flex items-center gap-1 font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Auto-Save: Active
+                </span>
+                <button id="btn-sound-toggle" onclick="toggleAudio()" class="pixel-btn bg-slate-800 text-amber-300 px-2.5 py-1 text-[11px] flex items-center gap-1">
+                    <span id="sound-icon">🔊</span> SFX
+                </button>
+                <button id="btn-bgm-toggle" onclick="toggleBGM()" class="pixel-btn bg-slate-800 text-cyan-300 px-2.5 py-1 text-[11px] flex items-center gap-1">
+                    🎵 BGM: OFF
+                </button>
+                <button onclick="manualSave()" class="pixel-btn bg-blue-900 hover:bg-blue-800 text-white px-2.5 py-1 text-[11px] flex items-center gap-1">
+                    💾 Simpan
+                </button>
+                <button onclick="manualLoad()" class="pixel-btn bg-cyan-900 hover:bg-cyan-800 text-white px-2.5 py-1 text-[11px] flex items-center gap-1">
+                    📂 Muat
+                </button>
+                <button onclick="openResetModal()" class="pixel-btn bg-gray-800 text-red-400 px-2 py-1 text-[11px]">
+                    🔄 Reset
+                </button>
+                <button id="btn-next-month" onclick="advanceMonth()" class="pixel-btn bg-emerald-600 hover:bg-emerald-500 text-yellow-200 px-3 py-1.5 text-xs animate-pulse">
+                    ⏭️ LANJUT BULAN
+                </button>
+            </div>
+        </div>
+
+        <!-- Metric Cards Bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 text-center text-[11px]">
+            <!-- Approval -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">Approval Rakyat</div>
+                <div id="stat-approval" class="text-base font-pixel-heading text-emerald-400 mt-0.5">60%</div>
+                <div class="pixel-progress-bg mt-1">
+                    <div id="bar-approval" class="pixel-progress-fill bg-emerald-500" style="width: 60%"></div>
+                </div>
+            </div>
+
+            <!-- APBN -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">Kas APBN</div>
+                <div id="stat-apbn" class="text-xs font-pixel-heading text-amber-300 mt-1">Rp 3,300 T</div>
+                <div id="stat-apbn-delta" class="text-[10px] text-emerald-400">+50 T / bln</div>
+            </div>
+
+            <!-- Pertumbuhan & Inflasi -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">GDP / Inflasi</div>
+                <div class="text-xs font-pixel-heading text-cyan-300 mt-1">
+                    <span id="stat-gdp">5.1%</span> / <span id="stat-inflation" class="text-yellow-400">2.8%</span>
+                </div>
+                <div class="text-[9px] text-slate-400 mt-0.5">Target: >6.0%</div>
+            </div>
+
+            <!-- Stabilitas Politik DPR -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">Koalisi DPR</div>
+                <div id="stat-dpr" class="text-base font-pixel-heading text-blue-400 mt-0.5">68%</div>
+                <div class="pixel-progress-bg mt-1">
+                    <div id="bar-dpr" class="pixel-progress-fill bg-blue-500" style="width: 68%"></div>
+                </div>
+            </div>
+
+            <!-- Indeks Anti Korupsi -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">Indeks Korupsi</div>
+                <div id="stat-ipk" class="text-base font-pixel-heading text-purple-400 mt-0.5">38/100</div>
+                <div class="pixel-progress-bg mt-1">
+                    <div id="bar-ipk" class="pixel-progress-fill bg-purple-500" style="width: 38%"></div>
+                </div>
+            </div>
+
+            <!-- Progres IKN -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">Progres IKN</div>
+                <div id="stat-ikn" class="text-base font-pixel-heading text-yellow-400 mt-0.5">25%</div>
+                <div class="pixel-progress-bg mt-1">
+                    <div id="bar-ikn" class="pixel-progress-fill bg-yellow-500" style="width: 25%"></div>
+                </div>
+            </div>
+
+            <!-- Pangan & Militer -->
+            <div class="pixel-card p-1.5 bg-slate-900/90">
+                <div class="text-slate-400">Pangan / TNI</div>
+                <div class="text-xs font-pixel-heading text-orange-400 mt-1">
+                    <span id="stat-pangan">65%</span> / <span id="stat-militer" class="text-red-400">80%</span>
+                </div>
+                <div class="text-[9px] text-slate-400 mt-0.5">Stabilitas Hankam</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE SECTION -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2 mb-2">
+        
+        <!-- LEFT SIDEBAR: TAB NAVIGATION & DEMOGRAPHIC SURVEI -->
+        <nav class="lg:col-span-1 pixel-panel p-2 flex flex-col gap-1.5 bg-slate-950">
+            <h2 class="text-[11px] font-pixel-heading text-red-400 mb-1 px-1 border-b border-slate-800 pb-1">PANEL INSTRUKSI PRESIDEN</h2>
+            
+            <button onclick="switchTab('map')" id="nav-map" class="pixel-btn text-left p-2 text-xs bg-red-900 text-yellow-300 flex items-center justify-between">
+                <span>🗺️ Peta Nusantara 100% Real</span>
+                <span id="map-crisis-badge" class="hidden w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+            </button>
+            <button onclick="switchTab('office')" id="nav-office" class="pixel-btn text-left p-2 text-xs bg-slate-800 text-slate-200">
+                🏛️ Ruang Kerja & TV Berita
+            </button>
+            <button onclick="switchTab('apbn')" id="nav-apbn" class="pixel-btn text-left p-2 text-xs bg-slate-800 text-slate-200">
+                💰 Kebijakan APBN & Pajak
+            </button>
+            <button onclick="switchTab('laws')" id="nav-laws" class="pixel-btn text-left p-2 text-xs bg-slate-800 text-slate-200">
+                📜 Perpres & Undang-Undang
+            </button>
+            <button onclick="switchTab('cabinet')" id="nav-cabinet" class="pixel-btn text-left p-2 text-xs bg-slate-800 text-slate-200">
+                👔 Kabinet Merah Putih
+            </button>
+            <button onclick="switchTab('diplomacy')" id="nav-diplomacy" class="pixel-btn text-left p-2 text-xs bg-slate-800 text-slate-200">
+                🌐 Diplomasi Bebas-Aktif
+            </button>
+
+            <!-- Demographics Widget -->
+            <div class="mt-auto pixel-card p-2 bg-slate-900 text-xs space-y-1">
+                <div class="text-amber-400 font-bold border-b border-slate-800 pb-1 text-[11px]">📊 Survei Demografi Rakyat</div>
+                <div class="space-y-1 text-[10px]">
+                    <div class="flex justify-between"><span>👷 Buruh & Worker:</span> <span id="group-buruh" class="text-emerald-400 font-bold">60%</span></div>
+                    <div class="flex justify-between"><span>🌾 Petani & Nelayan:</span> <span id="group-petani" class="text-emerald-400 font-bold">65%</span></div>
+                    <div class="flex justify-between"><span>🏢 Kelas Menengah:</span> <span id="group-menengah" class="text-emerald-400 font-bold">55%</span></div>
+                    <div class="flex justify-between"><span>🏬 Investor/Pengusaha:</span> <span id="group-pengusaha" class="text-emerald-400 font-bold">70%</span></div>
+                    <div class="flex justify-between"><span>🎓 Mahasiswa & Akademisi:</span> <span id="group-mahasiswa" class="text-emerald-400 font-bold">50%</span></div>
+                    <div class="flex justify-between"><span>🕌 Ulama & Tokoh Agama:</span> <span id="group-ulama" class="text-emerald-400 font-bold">65%</span></div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- RIGHT DISPLAY PANEL: ACTIVE CONTENT -->
+        <section class="lg:col-span-3 pixel-panel p-2.5 bg-slate-900 flex flex-col min-h-[520px]">
+            
+            <!-- TAB 1: 100% REALISTIC PIXEL ART MAP OF INDONESIA -->
+            <div id="tab-map" class="tab-content flex-1 flex flex-col gap-2">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                    <div>
+                        <h3 class="font-pixel-heading text-amber-400 text-xs sm:text-sm">🗺️ PETA GEOGRAFIS INDONESIA 16-BIT REALISTIS</h3>
+                        <p class="text-[10px] text-slate-400">Arahkan kursor atau sentuh wilayah untuk melihat status & menangani krisis daerah secara langsung.</p>
+                    </div>
+                    <div class="text-xs bg-slate-950 px-2.5 py-1 border border-slate-700 rounded text-yellow-300">
+                        Poin Blusukan: <b id="map-blusukan-pts" class="text-amber-400 font-pixel-heading">2</b>
+                    </div>
+                </div>
+
+                <!-- REALISTIC MAP CANVAS CONTAINER -->
+                <div class="relative w-full flex-1 min-h-[380px] bg-slate-950 border-4 border-black overflow-hidden rounded flex flex-col justify-between">
+                    <!-- Interactive Pixel Map Canvas -->
+                    <canvas id="canvas-map" class="w-full h-full block"></canvas>
+
+                    <!-- Map Overlay Controls & Legend -->
+                    <div class="absolute top-2 left-2 bg-slate-950/85 backdrop-blur-sm p-2 border border-slate-800 rounded text-[10px] space-y-1 pointer-events-none">
+                        <div class="text-amber-400 font-bold border-b border-slate-800 pb-0.5">LEGENDA PETA</div>
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Wilayah Stabil</div>
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span> Titik Krisis / Bencana</div>
+                        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span> IKN Nusantara</div>
+                    </div>
+
+                    <!-- Canvas Hover Tooltip -->
+                    <div id="map-tooltip" class="hidden absolute pointer-events-none bg-slate-900 border-2 border-yellow-400 p-2 text-[11px] rounded shadow-xl z-20 space-y-0.5">
+                        <div id="tt-name" class="font-bold text-amber-300">Sumatra</div>
+                        <div id="tt-status" class="text-emerald-400">Kondisi: Aman & Stabil</div>
+                        <div id="tt-infra" class="text-slate-300">Infrastruktur: 60%</div>
+                    </div>
+
+                    <!-- Ambient Bottom Bar on Map -->
+                    <div class="bg-black/80 px-3 py-1.5 text-[10px] text-slate-300 flex justify-between items-center z-10 border-t border-slate-900">
+                        <div>🌐 Koordinat ZEE & Kepulauan Nusantara RI</div>
+                        <div id="map-weather-status" class="text-cyan-300 font-mono">Cuaca Tropis: Cerah Berawan</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: RUANG KERJA ISTANA & TV NEWS -->
+            <div id="tab-office" class="tab-content hidden flex-1 flex flex-col gap-2">
+                <div class="relative w-full h-64 sm:h-72 bg-slate-950 border-4 border-black overflow-hidden rounded">
+                    <canvas id="canvas-office" class="w-full h-full block"></canvas>
+                    
+                    <div id="desk-crisis-alert" class="hidden absolute top-2 right-2 bg-red-600 text-white font-pixel-heading text-[10px] p-2 border-2 border-yellow-400 animate-bounce flex items-center gap-2">
+                        <span class="text-lg">☎️</span> TELEPON DARURAT ISTANA BERDENGUNG!
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1">
+                    <!-- Pixel TV TVRI -->
+                    <div class="pixel-card p-2.5 bg-red-950/40 border-red-800 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center border-b border-red-800 pb-1 mb-1.5">
+                                <span class="font-pixel-heading text-red-500 text-[10px] flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-red-600 animate-ping"></span> TVRI SIARAN LANGSUNG
+                                </span>
+                                <span class="text-[9px] text-slate-400">BERITA ISTANA</span>
+                            </div>
+                            <div id="tv-news-headline" class="text-xs font-bold text-yellow-200 mt-1">
+                                "Presiden RI menggelar rapat terbatas bersama kabinet untuk memantau situasi nasional."
+                            </div>
+                        </div>
+                        <div class="ticker-wrap bg-black/80 p-1.5 border border-red-900 text-[11px] text-slate-300 mt-2 font-mono">
+                            <div id="tv-news-ticker" class="ticker-move">
+                                BREAKING NEWS: Stabilitas ekonomi terjaga | Nusantara tumbuh pesat | TNI tingkatkan operasi pengamanan |
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sosmed Feed -->
+                    <div class="pixel-card p-2.5 bg-slate-950 flex flex-col justify-between">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-1 mb-1.5">
+                            <span class="font-pixel-heading text-cyan-400 text-[10px]">💬 NETIZEN (+62)</span>
+                            <span class="text-[9px] text-slate-500">#PresidenKita</span>
+                        </div>
+                        <div id="sosmed-feed" class="space-y-1.5 overflow-y-auto max-h-36 pr-1 text-[11px]">
+                            <!-- Posts -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Decision Box inside Office -->
+                <div id="event-container" class="pixel-panel p-3 bg-red-950/80 border-red-600 hidden">
+                    <div class="flex items-center gap-2 text-red-400 font-pixel-heading text-[10px] mb-1">
+                        <span>⚠️</span> DETEKSI KRISIS STRATEGIS KABINET:
+                    </div>
+                    <h3 id="event-title" class="text-sm font-bold text-white mb-1">Judul Krisis</h3>
+                    <p id="event-description" class="text-slate-300 mb-3 text-xs leading-relaxed">Deskripsi masalah...</p>
+                    <div id="event-choices" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <!-- Choice Buttons -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: APBN & EKONOMI -->
+            <div id="tab-apbn" class="tab-content hidden flex-1 space-y-3">
+                <h3 class="font-pixel-heading text-amber-400 text-xs border-b border-slate-700 pb-1.5">💸 KELOLA APBN & PAJAK STRATEGIS</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="pixel-card p-2.5 space-y-2.5">
+                        <h4 class="font-bold text-cyan-300 text-xs border-b border-slate-700 pb-1">1. Kebijakan Perpajakan</h4>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Tarif PPN:</span>
+                                <span id="val-ppn" class="text-amber-400 font-bold">11%</span>
+                            </div>
+                            <input type="range" id="slider-ppn" min="8" max="15" value="11" oninput="updateEconomicSliders()" class="w-full accent-amber-500">
+                            <p class="text-[9px] text-slate-400 mt-0.5">PPN tinggi menambah kas APBN tapi menekan daya beli Kelas Menengah.</p>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Tarif PPh Korporasi/Investor:</span>
+                                <span id="val-pph" class="text-amber-400 font-bold">22%</span>
+                            </div>
+                            <input type="range" id="slider-pph" min="15" max="35" value="22" oninput="updateEconomicSliders()" class="w-full accent-amber-500">
+                        </div>
+                    </div>
+
+                    <div class="pixel-card p-2.5 space-y-2.5">
+                        <h4 class="font-bold text-cyan-300 text-xs border-b border-slate-700 pb-1">2. Subsidi & Bantuan Sosial</h4>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Subsidi Energi & BBM:</span>
+                                <span id="val-sub-bbm" class="text-amber-400 font-bold">Normal</span>
+                            </div>
+                            <input type="range" id="slider-sub-bbm" min="0" max="2" value="1" oninput="updateEconomicSliders()" class="w-full accent-amber-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>Subsidi Pangan & Pupuk:</span>
+                                <span id="val-sub-pangan" class="text-amber-400 font-bold">Normal</span>
+                            </div>
+                            <input type="range" id="slider-sub-pangan" min="0" max="2" value="1" oninput="updateEconomicSliders()" class="w-full accent-amber-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pixel-card p-2.5 space-y-2">
+                    <h4 class="font-bold text-cyan-300 text-xs border-b border-slate-700 pb-1">3. Alokasi Sektor Belanja APBN</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>🎓 Pendidikan (UUD min 20%):</span>
+                                <span id="val-budget-edu" class="text-emerald-400">20%</span>
+                            </div>
+                            <input type="range" id="slider-budget-edu" min="15" max="30" value="20" oninput="updateEconomicSliders()" class="w-full accent-emerald-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>🏥 Kesehatan & BPJS:</span>
+                                <span id="val-budget-health" class="text-emerald-400">10%</span>
+                            </div>
+                            <input type="range" id="slider-budget-health" min="5" max="20" value="10" oninput="updateEconomicSliders()" class="w-full accent-emerald-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>🏗️ Infrastruktur & IKN:</span>
+                                <span id="val-budget-infra" class="text-emerald-400">18%</span>
+                            </div>
+                            <input type="range" id="slider-budget-infra" min="5" max="30" value="18" oninput="updateEconomicSliders()" class="w-full accent-emerald-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span>🪖 Pertahanan TNI/Polri:</span>
+                                <span id="val-budget-defense" class="text-emerald-400">12%</span>
+                            </div>
+                            <input type="range" id="slider-budget-defense" min="5" max="25" value="12" oninput="updateEconomicSliders()" class="w-full accent-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-2 border border-slate-800 rounded flex flex-wrap justify-between items-center text-xs mt-2">
+                        <div>Est. Penerimaan: <b id="proj-revenue" class="text-emerald-400">Rp 2,800 T</b> | Belanja: <b id="proj-spending" class="text-red-400">Rp 2,750 T</b></div>
+                        <div>Surplus/Defisit: <b id="proj-net" class="text-amber-400">+50 T / bln</b></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: PERPRES & UNDANG-UNDANG -->
+            <div id="tab-laws" class="tab-content hidden flex-1 space-y-2">
+                <h3 class="font-pixel-heading text-amber-400 text-xs border-b border-slate-700 pb-1.5">📜 UNDANG-UNDANG & PERPRES STRATEGIS</h3>
+                <div id="laws-grid" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <!-- Rendered dynamic laws -->
+                </div>
+            </div>
+
+            <!-- TAB 5: KABINET MERAH PUTIH -->
+            <div id="tab-cabinet" class="tab-content hidden flex-1 space-y-2">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-1.5">
+                    <h3 class="font-pixel-heading text-amber-400 text-xs">👔 SUSUNAN KABINET MERAH PUTIH</h3>
+                    <span class="text-xs text-slate-400">Dukungan Koalisi DPR: <b id="cabinet-dpr-status" class="text-blue-400">68%</b></span>
+                </div>
+                <div id="cabinet-list" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <!-- Rendered ministers -->
+                </div>
+            </div>
+
+            <!-- TAB 6: DIPLOMASI BEBAS-AKTIF -->
+            <div id="tab-diplomacy" class="tab-content hidden flex-1 space-y-2">
+                <h3 class="font-pixel-heading text-amber-400 text-xs border-b border-slate-700 pb-1.5">🌐 POLITIK LUAR NEGERI BEBAS-AKTIF</h3>
+                <div id="diplomacy-grid" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <!-- Rendered Powers -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- INTERACTIVE REGIONAL ACTION MODAL (CLICKING REGION ON MAP) -->
+    <div id="modal-region" class="fixed inset-0 bg-black/85 z-50 hidden flex items-center justify-center p-3">
+        <div class="pixel-panel p-4 max-w-lg w-full bg-slate-900 border-amber-500 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <div>
+                    <h3 id="reg-modal-title" class="font-pixel-heading text-amber-400 text-sm sm:text-base">🏝️ Sumatra</h3>
+                    <p id="reg-modal-sub" class="text-[10px] text-slate-400">Pusat Ekonomi & Sumber Daya Alam Indonesia Barat</p>
+                </div>
+                <button onclick="closeRegionModal()" class="pixel-btn bg-red-800 text-white px-2 py-0.5 text-xs">X</button>
+            </div>
+
+            <!-- Regional Stats Grid -->
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="pixel-card p-2 bg-slate-950">
+                    <span class="text-slate-400">Kepuasan Daerah:</span>
+                    <div id="reg-modal-approval" class="font-pixel-heading text-emerald-400 text-sm mt-0.5">65%</div>
+                </div>
+                <div class="pixel-card p-2 bg-slate-950">
+                    <span class="text-slate-400">Tingkat Infrastruktur:</span>
+                    <div id="reg-modal-infra" class="font-pixel-heading text-cyan-400 text-sm mt-0.5">60%</div>
+                </div>
+            </div>
+
+            <!-- Dynamic Crisis Alert in Modal -->
+            <div id="reg-modal-crisis-box" class="pixel-card p-2.5 bg-red-950/80 border-red-600 hidden">
+                <div class="text-red-400 font-pixel-heading text-[10px] flex items-center gap-1">
+                    <span class="animate-ping">⚠️</span> KRISIS AKTIF DILAPORKAN:
+                </div>
+                <div id="reg-modal-crisis-text" class="text-yellow-200 text-xs font-bold mt-1">Erupsi Gunung Berapi & Hujan Abu</div>
+            </div>
+
+            <!-- Emergency Actions List -->
+            <div class="space-y-1.5 pt-1">
+                <div class="text-[10px] font-pixel-heading text-yellow-300">TINDAKAN PRESIDEN UNTUK WILAYAH INI:</div>
+                
+                <button onclick="executeRegionalAction('blusukan')" class="pixel-btn bg-amber-700 hover:bg-amber-600 text-white w-full p-2 text-xs text-left flex justify-between items-center">
+                    <span>✈️ Kunjungan Blusukan Presiden</span>
+                    <span class="text-[10px] bg-black/40 px-1.5 py-0.5 rounded text-amber-200">-1 Poin Blusukan</span>
+                </button>
+
+                <button onclick="executeRegionalAction('aid')" class="pixel-btn bg-emerald-800 hover:bg-emerald-700 text-white w-full p-2 text-xs text-left flex justify-between items-center">
+                    <span>💰 Kirim Bantuan Bencana & Logistik APBN</span>
+                    <span class="text-[10px] bg-black/40 px-1.5 py-0.5 rounded text-emerald-200">-Rp 30 T Kas</span>
+                </button>
+
+                <button onclick="executeRegionalAction('tni')" class="pixel-btn bg-red-900 hover:bg-red-800 text-white w-full p-2 text-xs text-left flex justify-between items-center">
+                    <span>🪖 Gelar Operasi Keamanan TNI/Polri</span>
+                    <span class="text-[10px] bg-black/40 px-1.5 py-0.5 rounded text-red-200">Tingkatkan Keamanan</span>
+                </button>
+
+                <button onclick="executeRegionalAction('infra')" class="pixel-btn bg-blue-900 hover:bg-blue-800 text-white w-full p-2 text-xs text-left flex justify-between items-center">
+                    <span>🏗️ Pembangunan Proyek Strategis Nasional (PSN)</span>
+                    <span class="text-[10px] bg-black/40 px-1.5 py-0.5 rounded text-blue-200">-Rp 80 T Kas</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP ENDING -->
+    <div id="modal-ending" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
+        <div class="pixel-panel p-6 max-w-xl w-full bg-slate-900 border-yellow-500 space-y-4 text-center">
+            <h2 id="ending-title" class="font-pixel-heading text-amber-400 text-base sm:text-lg">LAPORAN AKHIR JABATAN PRESIDEN</h2>
+            <div id="ending-badge" class="text-4xl my-2">🏆</div>
+            <p id="ending-subtitle" class="font-pixel-heading text-xs sm:text-sm text-yellow-200">Gelar: Presiden Legendaris Nusantara</p>
+            <p id="ending-desc" class="text-slate-300 text-xs leading-relaxed">Deskripsi capaian kepemimpinan...</p>
+            
+            <div id="ending-stats" class="pixel-card p-3 bg-slate-950 text-left text-xs space-y-1">
+                <!-- Stats -->
+            </div>
+
+            <button onclick="location.reload()" class="pixel-btn bg-emerald-600 text-white px-6 py-2.5 text-xs font-pixel-heading">
+                🎮 MAIN LAGI
+            </button>
+        </div>
+    </div>
+
+    <!-- RESHUFFLE MODAL -->
+    <div id="modal-reshuffle" class="fixed inset-0 bg-black/80 z-40 hidden flex items-center justify-center p-3">
+        <div class="pixel-panel p-4 max-w-lg w-full bg-slate-900 border-cyan-500 space-y-3">
+            <h3 class="font-pixel-heading text-cyan-300 text-xs sm:text-sm border-b border-slate-700 pb-2">PILIH MENTERI BARU KABINET</h3>
+            <p id="reshuffle-post-name" class="text-xs text-amber-300 font-bold">Posisi: Menkeu</p>
+            <div id="candidates-list" class="space-y-2">
+                <!-- Candidates -->
+            </div>
+            <button onclick="closeReshuffleModal()" class="pixel-btn bg-gray-800 text-white px-3 py-1.5 text-xs w-full mt-2">Batal</button>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMATION LOAD EXISTING SAVE ON STARTUP -->
+    <div id="modal-load-start" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-3">
+        <div class="pixel-panel p-5 max-w-md w-full bg-slate-900 border-amber-500 space-y-4 text-center">
+            <div class="text-3xl animate-bounce">🇮🇩</div>
+            <h3 class="font-pixel-heading text-amber-400 text-sm sm:text-base">DATA JABATAN TERSEDIA!</h3>
+            <p class="text-xs text-slate-300">Ditemukan data simpanan presiden sebelumnya di browser Anda:</p>
+            
+            <div id="load-save-summary" class="pixel-card p-3 bg-slate-950 text-left text-xs space-y-1.5 border-amber-700">
+                <!-- Saved summary inserted dynamically -->
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                <button onclick="loadSavedGameAndStart()" class="pixel-btn bg-emerald-600 hover:bg-emerald-500 text-white flex-1 py-2 text-xs font-pixel-heading">
+                    ▶️ LANJUTKAN JABATAN
+                </button>
+                <button onclick="startFreshGame()" class="pixel-btn bg-red-900 hover:bg-red-800 text-slate-200 flex-1 py-2 text-xs">
+                    🆕 MULAI JABATAN BARU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMATION RESET DATA -->
+    <div id="modal-reset-confirm" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-3">
+        <div class="pixel-panel p-4 max-w-md w-full bg-slate-900 border-red-600 space-y-3 text-center">
+            <h3 class="font-pixel-heading text-red-400 text-xs sm:text-sm">⚠️ KONFIRMASI HAPUS JABATAN</h3>
+            <p class="text-xs text-slate-300">Apakah Anda yakin ingin menghapus seluruh progres simpanan? Tindakan ini tidak dapat dibatalkan.</p>
+            <div class="flex gap-2 pt-2">
+                <button onclick="executeResetData()" class="pixel-btn bg-red-700 text-white flex-1 py-1.5 text-xs">Ya, Hapus Data</button>
+                <button onclick="closeResetModal()" class="pixel-btn bg-slate-800 text-slate-200 flex-1 py-1.5 text-xs">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION CUSTOM TOAST OVERLAY -->
+    <div id="custom-toast" class="fixed bottom-4 right-4 bg-amber-500 text-black border-2 border-black p-3 font-bold text-xs shadow-2xl z-50 hidden max-w-xs transition-all transform duration-200">
+        <div id="toast-text">Pesan pemberitahuan...</div>
+    </div>
+
+    <!-- JAVASCRIPT GAME ENGINE V3.0 (FIXED & CLEANED) -->
+    <script>
+        /* ==========================================================================
+           GAME STATE ENGINE & PERSISTENCE (LOCALSTORAGE SAVE / LOAD)
+           ========================================================================== */
+        const SAVE_KEY = 'presiden_sim_save_v3';
+
+        const DEFAULT_STATE = {
+            month: 1,
+            year: 2024,
+            apbn: 3300,
+            gdpGrowth: 5.1,
+            inflation: 2.8,
+            ipk: 38,
+            iknProgress: 25,
+            foodSecurity: 65,
+            militarySecurity: 80,
+            dprSupport: 68,
+            blusukanPoints: 2,
+
+            ppnRate: 11,
+            pphRate: 22,
+            subBbm: 1,
+            subPangan: 1,
+
+            budgetEdu: 20,
+            budgetHealth: 10,
+            budgetInfra: 18,
+            budgetDefense: 12,
+
+            approval: { buruh: 60, petani: 65, menengah: 55, pengusaha: 70, mahasiswa: 50, ulama: 65 },
+
+            passedLaws: [],
+
+            ministers: [
+                { id: 'menkeu', title: 'Menteri Keuangan', name: 'Sri Mulyati', competence: 90, loyalty: 80, integrity: 88, party: 'Independen' },
+                { id: 'menhan', title: 'Menteri Pertahanan', name: 'Sjafrie S.', competence: 82, loyalty: 95, integrity: 80, party: 'Gerindra' },
+                { id: 'menko_polkam', title: 'Menko Polkam', name: 'Budi Gunawan', competence: 78, loyalty: 85, integrity: 75, party: 'PDI-P' },
+                { id: 'menko_ekonomi', title: 'Menko Perekonomian', name: 'Airlangga H.', competence: 80, loyalty: 78, integrity: 72, party: 'Golkar' },
+                { id: 'menlu', title: 'Menteri Luar Negeri', name: 'Sugiono', competence: 75, loyalty: 90, integrity: 85, party: 'Gerindra' },
+                { id: 'menkes', title: 'Menteri Kesehatan', name: 'Budi Sadikin', competence: 88, loyalty: 82, integrity: 90, party: 'Independen' }
+            ],
+
+            diplomacy: { usa: 55, china: 60, eu: 45, brics: 65, asean: 85 },
+
+            regions: [
+                { id: 'sumatra', name: 'Sumatra', approval: 62, infra: 60, crisis: null, crisisType: null },
+                { id: 'jawa', name: 'Jawa & Madura', approval: 58, infra: 85, crisis: null, crisisType: null },
+                { id: 'kalimantan', name: 'Kalimantan', approval: 75, infra: 55, crisis: null, crisisType: null },
+                { id: 'sulawesi', name: 'Sulawesi', approval: 65, infra: 50, crisis: null, crisisType: null },
+                { id: 'balinusa', name: 'Bali & Nusa Tenggara', approval: 70, infra: 65, crisis: null, crisisType: null },
+                { id: 'maluku', name: 'Kepulauan Maluku', approval: 60, infra: 40, crisis: null, crisisType: null },
+                { id: 'papua', name: 'Papua', approval: 55, infra: 35, crisis: 'Ketegangan Keamanan Kelompok Bersenjata', crisisType: 'security' }
+            ],
+
+            newsFeed: ["Pelantikan Presiden baru RI periode 2024-2029 berjalan dengan khidmat."],
+            socialFeed: [
+                { user: "@RakyatKritis", text: "Selamat bekerja Pak Presiden! Tolong sembako & pupuk murah!" },
+                { user: "@PengusahaID", text: "Semoga kestabilan pasar nasional tetap dijaga dengan baik." }
+            ]
+        };
+
+        let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        let activeSelectedRegionId = null;
+        let activeReshufflePostId = null;
+
+        const MINISTER_CANDIDATES = {
+            menkeu: [
+                { name: 'Chatib B.', competence: 92, loyalty: 75, integrity: 90, party: 'Independen' },
+                { name: 'Bambang B.', competence: 85, loyalty: 88, integrity: 85, party: 'Golkar' }
+            ],
+            menhan: [
+                { name: 'Andika P.', competence: 88, loyalty: 80, integrity: 85, party: 'PDI-P' },
+                { name: 'Dudung A.', competence: 82, loyalty: 92, integrity: 78, party: 'Independen' }
+            ],
+            menko_polkam: [
+                { name: 'Mahfud M.', competence: 94, loyalty: 70, integrity: 95, party: 'Independen' },
+                { name: 'Hadi T.', competence: 84, loyalty: 90, integrity: 82, party: 'NasDem' }
+            ],
+            menko_ekonomi: [
+                { name: 'Daratjun P.', competence: 85, loyalty: 80, integrity: 85, party: 'Demokrat' },
+                { name: 'Erick T.', competence: 86, loyalty: 85, integrity: 80, party: 'Independen' }
+            ],
+            menlu: [
+                { name: 'Retno M.', competence: 95, loyalty: 85, integrity: 92, party: 'Independen' },
+                { name: 'Dino P. D.', competence: 84, loyalty: 80, integrity: 88, party: 'Demokrat' }
+            ],
+            menkes: [
+                { name: 'Terawan A.', competence: 75, loyalty: 80, integrity: 70, party: 'Independen' },
+                { name: 'Prof. Tjandra Y.', competence: 90, loyalty: 85, integrity: 92, party: 'Independen' }
+            ]
+        };
+
+        const LAWS_DATABASE = [
+            { id: 'hilirisasi', title: 'UU Hilirisasi Minerba & Nikel', desc: 'Melarang ekspor bahan mentah tambang, wajibkan smelter dalam negeri.', cost: 150, impactDesc: '+GDP, +Pengusaha, -Hubungan EU', reqDpr: 50 },
+            { id: 'anti_korupsi', title: 'UU RUU Sitasi Aset & Anti Korupsi', desc: 'Sita otomatis aset koruptor & perkuat pembuktian terbalik.', cost: 50, impactDesc: '++IPK, ++Mahasiswa, -Dukungan DPR', reqDpr: 60 },
+            { id: 'makan_gratis', title: 'Perpres Makan Bergizi Gratis', desc: 'Berikan makan gratis harian untuk siswa & ibu hamil seluruh Indonesia.', cost: 350, impactDesc: '++Approval Rakyat & Ulama, -APBN', reqDpr: 40 },
+            { id: 'cipta_kerja', title: 'UU Kemudahan Investasi & Tenaga Kerja', desc: 'Mempermudah izin usaha asing dan fleksibilitas tenaga kerja.', cost: 80, impactDesc: '++Pengusaha, -Buruh & Mahasiswa', reqDpr: 55 },
+            { id: 'energi_hijau', title: 'Perpres Transisi Energi & Listrik Surya', desc: 'Pembangunan Pembangkit Listrik Energi Terbarukan Nasional.', cost: 200, impactDesc: '+Infra, ++EU Diplomacy, -APBN', reqDpr: 50 }
+        ];
+
+        const RANDOM_CRISES = [
+            { name: 'Erupsi Gunung Berapi & Hujan Abu', type: 'disaster', regionId: 'jawa' },
+            { name: 'Kabut Asap Kebakaran Hutan (Karhutla)', type: 'haze', regionId: 'sumatra' },
+            { name: 'Banjir Bandang & Tanah Longsor', type: 'disaster', regionId: 'sulawesi' },
+            { name: 'Kelangkaan Beras & Sembako', type: 'food', regionId: 'balinusa' },
+            { name: 'Gelombang Demo Buruh Industri', type: 'strike', regionId: 'jawa' },
+            { name: 'Kebakaran Hutan & Kabut Tropis', type: 'haze', regionId: 'kalimantan' },
+            { name: 'Gangguan Keamanan Perbatasan', type: 'security', regionId: 'papua' }
+        ];
+
+        /* PERSISTENCE ENGINE (AUTO-SAVE / MANUAL-SAVE / LOAD) */
+        function autoSave() {
+            try {
+                state.lastSavedTimestamp = new Date().toISOString();
+                localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+                flashSaveStatus();
+            } catch(e) {
+                console.error("Auto-save error:", e);
+            }
+        }
+
+        function manualSave() {
+            audio.success();
+            autoSave();
+            showToast("💾 Progres Jabatan Berhasil Disimpan ke Browser!");
+        }
+
+        function manualLoad() {
+            const savedData = localStorage.getItem(SAVE_KEY);
+            if (!savedData) {
+                showToast("❌ Tidak ditemukan data simpanan!");
+                return;
+            }
+            try {
+                state = JSON.parse(savedData);
+                renderAll();
+                audio.success();
+                showToast("📂 Data Jabatan Presiden Berhasil Dimuat!");
+            } catch(e) {
+                showToast("❌ Gagal memuat data simpanan.");
+            }
+        }
+
+        function flashSaveStatus() {
+            const badge = document.getElementById('save-status-badge');
+            if (badge) {
+                badge.classList.remove('border-emerald-700', 'text-emerald-400');
+                badge.classList.add('border-yellow-400', 'text-yellow-300');
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span> Saving...`;
+                setTimeout(() => {
+                    badge.classList.remove('border-yellow-400', 'text-yellow-300');
+                    badge.classList.add('border-emerald-700', 'text-emerald-400');
+                    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Auto-Save: Active`;
+                }, 800);
+            }
+        }
+
+        function checkSaveOnStartup() {
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const summary = document.getElementById('load-save-summary');
+                    if (summary) {
+                        const app = Object.values(parsed.approval || {}).reduce((a,b)=>a+b,0)/6;
+                        summary.innerHTML = `
+                            <div>📅 Masa Jabatan: <b>Bulan ${parsed.month || 1} / 60 (${getMonthYearString(parsed.month || 1)})</b></div>
+                            <div>💰 Kas APBN: <b>Rp ${(parsed.apbn || 3300).toLocaleString('id-ID')} T</b></div>
+                            <div>📊 Approval Rakyat: <b>${Math.round(app)}%</b></div>
+                            <div>🏛️ Progres IKN: <b>${Math.round(parsed.iknProgress || 0)}%</b></div>
+                        `;
+                    }
+                    document.getElementById('modal-load-start').classList.remove('hidden');
+                    return;
+                } catch(e) {}
+            }
+            renderAll();
+        }
+
+        function loadSavedGameAndStart() {
+            audio.success();
+            manualLoad();
+            document.getElementById('modal-load-start').classList.add('hidden');
+        }
+
+        function startFreshGame() {
+            audio.click();
+            state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            autoSave();
+            renderAll();
+            document.getElementById('modal-load-start').classList.add('hidden');
+            showToast("🎮 Kabinet Baru Dimulai! Selamat Berjuang!");
+        }
+
+        function openResetModal() {
+            audio.click();
+            document.getElementById('modal-reset-confirm').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('modal-reset-confirm').classList.add('hidden');
+        }
+
+        function executeResetData() {
+            audio.siren();
+            localStorage.removeItem(SAVE_KEY);
+            state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            closeResetModal();
+            renderAll();
+            showToast("🔄 Data dihapus! Memulai periode baru.");
+        }
+
+        /* WEB AUDIO RETRO SOUND ENGINE */
+        class RetroAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.sfxEnabled = true;
+                this.bgmEnabled = false;
+                this.bgmInterval = null;
+                this.noteIndex = 0;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+            playTone(freq, type, duration, vol=0.1) {
+                if (!this.sfxEnabled) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+            click() { this.playTone(800, 'square', 0.04, 0.08); }
+            success() { 
+                this.playTone(523.25, 'triangle', 0.08, 0.08);
+                setTimeout(() => this.playTone(659.25, 'triangle', 0.08, 0.08), 90);
+                setTimeout(() => this.playTone(783.99, 'triangle', 0.18, 0.08), 180);
+            }
+            siren() {
+                this.playTone(880, 'sawtooth', 0.1, 0.1);
+                setTimeout(() => this.playTone(440, 'sawtooth', 0.15, 0.1), 120);
+            }
+            toggleBGM() {
+                this.bgmEnabled = !this.bgmEnabled;
+                if (this.bgmEnabled) {
+                    this.startBGM();
+                } else {
+                    this.stopBGM();
+                }
+                return this.bgmEnabled;
+            }
+            startBGM() {
+                this.init();
+                const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63];
+                if (this.bgmInterval) clearInterval(this.bgmInterval);
+                this.bgmInterval = setInterval(() => {
+                    if (!this.bgmEnabled) return;
+                    this.playTone(notes[this.noteIndex], 'sine', 0.25, 0.03);
+                    this.noteIndex = (this.noteIndex + 1) % notes.length;
+                }, 400);
+            }
+            stopBGM() {
+                if (this.bgmInterval) clearInterval(this.bgmInterval);
+            }
+        }
+
+        const audio = new RetroAudioEngine();
+
+        function toggleAudio() {
+            audio.sfxEnabled = !audio.sfxEnabled;
+            document.getElementById('sound-icon').innerText = audio.sfxEnabled ? '🔊' : '🔇';
+        }
+
+        function toggleBGM() {
+            const active = audio.toggleBGM();
+            document.getElementById('btn-bgm-toggle').innerText = active ? '🎵 BGM: ON' : '🎵 BGM: OFF';
+            document.getElementById('btn-bgm-toggle').classList.toggle('text-yellow-300', active);
+        }
+
+        /* REALISTIC 16-BIT ARCHIPELAGO CANVAS MAP RENDER ENGINE */
+        let mapAnimationTimer = 0;
+
+        function initMapCanvas() {
+            const canvas = document.getElementById('canvas-map');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                const clickedRegion = detectRegionClick(mx, my, canvas.width, canvas.height);
+                if (clickedRegion) {
+                    openRegionModal(clickedRegion.id);
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                const hovered = detectRegionClick(mx, my, canvas.width, canvas.height);
+                
+                const tt = document.getElementById('map-tooltip');
+                if (hovered) {
+                    tt.classList.remove('hidden');
+                    tt.style.left = `${e.clientX - rect.left + 15}px`;
+                    tt.style.top = `${e.clientY - rect.top + 15}px`;
+                    
+                    const regState = state.regions.find(r => r.id === hovered.id);
+                    document.getElementById('tt-name').innerText = `🏝️ ${regState.name}`;
+                    document.getElementById('tt-status').innerText = regState.crisis ? `⚠️ KRISIS: ${regState.crisis}` : `Kondisi: Stabil (${regState.approval}% Approval)`;
+                    document.getElementById('tt-status').className = regState.crisis ? 'text-red-400 font-bold' : 'text-emerald-400';
+                    document.getElementById('tt-infra').innerText = `Infrastruktur: ${regState.infra}%`;
+                } else {
+                    tt.classList.add('hidden');
+                }
+            });
+
+            function animateMap() {
+                mapAnimationTimer += 0.05;
+                renderMapCanvas(canvas, ctx);
+                requestAnimationFrame(animateMap);
+            }
+            animateMap();
+        }
+
+        function detectRegionClick(mx, my, w, h) {
+            const relX = mx / w;
+            const relY = my / h;
+
+            if (relX >= 0.08 && relX <= 0.30 && relY >= 0.20 && relY <= 0.65) return { id: 'sumatra' };
+            if (relX >= 0.25 && relX <= 0.55 && relY >= 0.65 && relY <= 0.88) return { id: 'jawa' };
+            if (relX >= 0.32 && relX <= 0.52 && relY >= 0.18 && relY <= 0.55) return { id: 'kalimantan' };
+            if (relX >= 0.53 && relX <= 0.68 && relY >= 0.28 && relY <= 0.65) return { id: 'sulawesi' };
+            if (relX >= 0.55 && relX <= 0.72 && relY >= 0.68 && relY <= 0.88) return { id: 'balinusa' };
+            if (relX >= 0.70 && relX <= 0.80 && relY >= 0.28 && relY <= 0.62) return { id: 'maluku' };
+            if (relX >= 0.81 && relX <= 0.96 && relY >= 0.32 && relY <= 0.75) return { id: 'papua' };
+
+            return null;
+        }
+
+        function renderMapCanvas(canvas, ctx) {
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.fillStyle = '#06162d';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = '#0b2847';
+            drawIndonesianIslandsPath(ctx, w, h, 8);
+
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+            for (let i = 0; i < 15; i++) {
+                const wx = (Math.sin(mapAnimationTimer + i) * 20 + i * (w / 15)) % w;
+                const wy = (Math.cos(mapAnimationTimer * 0.8 + i) * 10 + i * (h / 15)) % h;
+                ctx.fillRect(wx, wy, 8, 2);
+            }
+
+            ctx.fillStyle = '#15803d';
+            drawIndonesianIslandsPath(ctx, w, h, 0);
+
+            drawMountainRanges(ctx, w, h);
+            drawCityMarkers(ctx, w, h);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+            for (let c = 0; c < 5; c++) {
+                const cx = (mapAnimationTimer * 10 + c * 180) % (w + 100) - 50;
+                const cy = 40 + c * 50;
+                ctx.fillRect(cx, cy, 45, 14);
+                ctx.fillRect(cx + 8, cy - 5, 25, 8);
+            }
+
+            state.regions.forEach(reg => {
+                if (reg.crisis) {
+                    const coords = getRegionCenterCoords(reg.id, w, h);
+                    
+                    const pulseRadius = 12 + Math.sin(mapAnimationTimer * 5) * 4;
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                    ctx.beginPath();
+                    ctx.arc(coords.x, coords.y, pulseRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(coords.x - 5, coords.y - 5, 10, 10);
+                    ctx.fillStyle = '#fef08a';
+                    ctx.fillRect(coords.x - 2, coords.y - 2, 4, 4);
+
+                    if (reg.crisisType === 'disaster') {
+                        ctx.fillStyle = '#38bdf8';
+                        for (let r = 0; r < 6; r++) {
+                            const rx = coords.x - 15 + (r * 6);
+                            const ry = coords.y - 10 + ((mapAnimationTimer * 40 + r * 5) % 20);
+                            ctx.fillRect(rx, ry, 2, 4);
+                        }
+                    } else if (reg.crisisType === 'haze') {
+                        ctx.fillStyle = 'rgba(120, 113, 108, 0.6)';
+                        ctx.fillRect(coords.x - 20, coords.y - 20, 40, 15);
+                    }
+                }
+            });
+        }
+
+        function drawIndonesianIslandsPath(ctx, w, h, expand = 0) {
+            ctx.beginPath();
+
+            drawPolygon(ctx, [
+                [0.10*w-expand, 0.25*h-expand], [0.18*w+expand, 0.20*h-expand], 
+                [0.28*w+expand, 0.45*h+expand], [0.24*w+expand, 0.62*h+expand], 
+                [0.18*w-expand, 0.58*h+expand], [0.12*w-expand, 0.40*h]
+            ]);
+
+            drawPolygon(ctx, [
+                [0.26*w-expand, 0.72*h-expand], [0.38*w, 0.72*h-expand], 
+                [0.52*w+expand, 0.76*h+expand], [0.50*w+expand, 0.82*h+expand], 
+                [0.26*w-expand, 0.79*h+expand]
+            ]);
+
+            drawPolygon(ctx, [
+                [0.34*w-expand, 0.22*h-expand], [0.48*w+expand, 0.20*h-expand], 
+                [0.50*w+expand, 0.45*h+expand], [0.46*w+expand, 0.52*h+expand], 
+                [0.35*w-expand, 0.50*h+expand]
+            ]);
+
+            drawPolygon(ctx, [
+                [0.54*w-expand, 0.32*h-expand], [0.65*w+expand, 0.30*h-expand], 
+                [0.62*w+expand, 0.42*h], [0.66*w+expand, 0.48*h+expand], 
+                [0.56*w-expand, 0.62*h+expand], [0.54*w-expand, 0.48*h]
+            ]);
+
+            drawPolygon(ctx, [
+                [0.54*w-expand, 0.78*h-expand], [0.70*w+expand, 0.78*h-expand], 
+                [0.70*w+expand, 0.84*h+expand], [0.54*w-expand, 0.84*h+expand]
+            ]);
+
+            drawPolygon(ctx, [
+                [0.72*w-expand, 0.32*h-expand], [0.78*w+expand, 0.32*h-expand], 
+                [0.78*w+expand, 0.58*h+expand], [0.72*w-expand, 0.58*h+expand]
+            ]);
+
+            drawPolygon(ctx, [
+                [0.82*w-expand, 0.38*h-expand], [0.94*w+expand, 0.40*h-expand], 
+                [0.96*w+expand, 0.68*h+expand], [0.85*w-expand, 0.70*h+expand], 
+                [0.82*w-expand, 0.52*h]
+            ]);
+
+            ctx.fill();
+        }
+
+        function drawPolygon(ctx, points) {
+            if (points.length === 0) return;
+            ctx.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i][0], points[i][1]);
+            }
+            ctx.closePath();
+        }
+
+        function drawMountainRanges(ctx, w, h) {
+            ctx.fillStyle = '#166534';
+            ctx.fillRect(0.14*w, 0.30*h, 6, 6);
+            ctx.fillRect(0.19*w, 0.42*h, 8, 8);
+
+            ctx.fillStyle = '#b91c1c';
+            ctx.fillRect(0.38*w, 0.73*h, 6, 6);
+            ctx.fillRect(0.44*w, 0.74*h, 5, 5);
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0.87*w, 0.48*h, 14, 6);
+            ctx.fillRect(0.89*w, 0.46*h, 8, 4);
+        }
+
+        function drawCityMarkers(ctx, w, h) {
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(0.30*w, 0.73*h, 6, 6);
+
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(0.44*w, 0.42*h, 7, 7);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(0.13*w, 0.28*h, 4, 4);
+            ctx.fillRect(0.46*w, 0.75*h, 4, 4);
+            ctx.fillRect(0.56*w, 0.58*h, 4, 4);
+            ctx.fillRect(0.92*w, 0.42*h, 4, 4);
+        }
+
+        function getRegionCenterCoords(regionId, w, h) {
+            const coords = {
+                sumatra: { x: 0.19 * w, y: 0.38 * h },
+                jawa: { x: 0.36 * w, y: 0.75 * h },
+                kalimantan: { x: 0.42 * w, y: 0.36 * h },
+                sulawesi: { x: 0.58 * w, y: 0.44 * h },
+                balinusa: { x: 0.62 * w, y: 0.80 * h },
+                maluku: { x: 0.75 * w, y: 0.45 * h },
+                papua: { x: 0.88 * w, y: 0.54 * h }
+            };
+            return coords[regionId] || { x: w / 2, y: h / 2 };
+        }
+
+        /* REGIONAL ACTIONS & MODALS */
+        function openRegionModal(regionId) {
+            audio.click();
+            activeSelectedRegionId = regionId;
+            const reg = state.regions.find(r => r.id === regionId);
+            if (!reg) return;
+
+            document.getElementById('reg-modal-title').innerText = `🏝️ Wilayah ${reg.name}`;
+            document.getElementById('reg-modal-approval').innerText = `${reg.approval}%`;
+            document.getElementById('reg-modal-infra').innerText = `${reg.infra}%`;
+
+            const crisisBox = document.getElementById('reg-modal-crisis-box');
+            if (reg.crisis) {
+                crisisBox.classList.remove('hidden');
+                document.getElementById('reg-modal-crisis-text').innerText = reg.crisis;
+            } else {
+                crisisBox.classList.add('hidden');
+            }
+
+            document.getElementById('modal-region').classList.remove('hidden');
+        }
+
+        function closeRegionModal() {
+            document.getElementById('modal-region').classList.add('hidden');
+        }
+
+        function executeRegionalAction(actionType) {
+            const reg = state.regions.find(r => r.id === activeSelectedRegionId);
+            if (!reg) return;
+
+            if (actionType === 'blusukan') {
+                if (state.blusukanPoints < 1) {
+                    showToast("❌ Poin Blusukan bulan ini habis! Lanjut bulan berikutnya.");
+                    return;
+                }
+                audio.success();
+                state.blusukanPoints -= 1;
+                reg.approval = Math.min(100, reg.approval + 10);
+                if (reg.crisis) {
+                    reg.crisis = null;
+                    reg.crisisType = null;
+                    showToast(`Presiden blusukan ke ${reg.name} & menyelesaikan krisis!`);
+                } else {
+                    showToast(`Kunjungan Blusukan ke ${reg.name} disambut antusias!`);
+                }
+            } else if (actionType === 'aid') {
+                if (state.apbn < 30) {
+                    showToast("❌ Kas APBN tidak cukup!");
+                    return;
+                }
+                audio.success();
+                state.apbn -= 30;
+                reg.approval = Math.min(100, reg.approval + 6);
+                if (reg.crisisType === 'disaster' || reg.crisisType === 'food') {
+                    reg.crisis = null;
+                    reg.crisisType = null;
+                }
+                showToast(`Bantuan Bencana Rp 30 T disalurkan ke ${reg.name}.`);
+            } else if (actionType === 'tni') {
+                audio.success();
+                state.militarySecurity = Math.min(100, state.militarySecurity + 3);
+                if (reg.crisisType === 'security' || reg.crisisType === 'strike') {
+                    reg.crisis = null;
+                    reg.crisisType = null;
+                }
+                showToast(`Operasi TNI/Polri di ${reg.name} berhasil memulihkan kondisi.`);
+            } else if (actionType === 'infra') {
+                if (state.apbn < 80) {
+                    showToast("❌ Kas APBN tidak cukup!");
+                    return;
+                }
+                audio.success();
+                state.apbn -= 80;
+                reg.infra = Math.min(100, reg.infra + 15);
+                reg.approval = Math.min(100, reg.approval + 5);
+                showToast(`Proyek Strategis Nasional di ${reg.name} dimulai!`);
+            }
+
+            closeRegionModal();
+            autoSave();
+            renderAll();
+        }
+
+        /* RESHUFFLE CABINET MODAL LOGIC */
+        function openReshuffleModal(postId) {
+            audio.click();
+            activeReshufflePostId = postId;
+            const minister = state.ministers.find(m => m.id === postId);
+            if (!minister) return;
+
+            document.getElementById('reshuffle-post-name').innerText = `Posisi: ${minister.title} (Saat ini: ${minister.name})`;
+            const list = document.getElementById('candidates-list');
+            list.innerHTML = '';
+
+            const candidates = MINISTER_CANDIDATES[postId] || [];
+            candidates.forEach((c, idx) => {
+                const item = document.createElement('div');
+                item.className = 'pixel-card p-2 bg-slate-950 flex justify-between items-center text-xs';
+                item.innerHTML = `
+                    <div>
+                        <div class="font-bold text-yellow-300">${c.name} (${c.party})</div>
+                        <div class="text-[9px] text-slate-400">Komp: ${c.competence} | Loy: ${c.loyalty} | Integ: ${c.integrity}</div>
+                    </div>
+                    <button onclick="appointMinister('${postId}', ${idx})" class="pixel-btn bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-1 text-[10px]">Pilih</button>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('modal-reshuffle').classList.remove('hidden');
+        }
+
+        function closeReshuffleModal() {
+            document.getElementById('modal-reshuffle').classList.add('hidden');
+        }
+
+        function appointMinister(postId, candidateIdx) {
+            audio.success();
+            const candidate = MINISTER_CANDIDATES[postId][candidateIdx];
+            const minister = state.ministers.find(m => m.id === postId);
+            if (minister && candidate) {
+                minister.name = candidate.name;
+                minister.competence = candidate.competence;
+                minister.loyalty = candidate.loyalty;
+                minister.integrity = candidate.integrity;
+                minister.party = candidate.party;
+                showToast(`Menteri Baru dilantik: ${candidate.name} (${minister.title})`);
+                autoSave();
+                renderAll();
+            }
+            closeReshuffleModal();
+        }
+
+        /* MAIN GAME ENGINE LOOPS & ADVANCE MONTH */
+        function advanceMonth() {
+            audio.click();
+
+            state.month += 1;
+            if (state.month % 12 === 1 && state.month > 1) {
+                state.year += 1;
+            }
+
+            state.blusukanPoints = Math.min(5, state.blusukanPoints + 1);
+
+            const taxBase = (state.ppnRate * 100) + (state.pphRate * 120);
+            const monthlyRevenue = Math.round(180 + (taxBase * 0.15) * (state.gdpGrowth / 5.0));
+
+            let monthlySpending = Math.round((state.budgetEdu * 4) + (state.budgetHealth * 3) + (state.budgetInfra * 5) + (state.budgetDefense * 3.5));
+            if (state.subBbm === 2) monthlySpending += 25;
+            if (state.subBbm === 0) monthlySpending -= 20;
+            if (state.passedLaws.includes('makan_gratis')) monthlySpending += 30;
+
+            const netMonthly = monthlyRevenue - monthlySpending;
+            state.apbn += netMonthly;
+
+            if (state.budgetInfra >= 18) {
+                state.iknProgress = Math.min(100, state.iknProgress + 1.8);
+            }
+
+            if (Math.random() < 0.4) {
+                const randomC = RANDOM_CRISES[Math.floor(Math.random() * RANDOM_CRISES.length)];
+                const targetReg = state.regions.find(r => r.id === randomC.regionId);
+                if (targetReg && !targetReg.crisis) {
+                    targetReg.crisis = randomC.name;
+                    targetReg.crisisType = randomC.type;
+                    audio.siren();
+                    addNews(`PERINGATAN KRISIS DAERAH: ${randomC.name} terjadi di ${targetReg.name}!`);
+                }
+            }
+
+            checkGameEndingStatus();
+            autoSave();
+            renderAll();
+        }
+
+        function calculateOverallApproval() {
+            const apps = Object.values(state.approval);
+            const avg = apps.reduce((a, b) => a + b, 0) / apps.length;
+            return Math.min(100, Math.max(0, Math.round(avg)));
+        }
+
+        function checkGameEndingStatus() {
+            const overallApp = calculateOverallApproval();
+
+            if (overallApp < 20) {
+                triggerEnding("❌ IMPEACHMENT KEPUTUSAN DPR", "💔", "Presiden Diberhentikan", "Tingkat kepuasan masyarakat jatuh di bawah 20%. Sidang Istimewa DPR memutuskan pemakzulan.");
+                return;
+            }
+
+            if (state.month >= 60) {
+                let badge = "🏆";
+                let title = "Presiden Legendaris Indonesia";
+                let desc = "Anda sukses memimpin Indonesia selama 5 tahun dengan stabilitas dan pembangunan yang gemilang!";
+
+                if (state.iknProgress >= 100) {
+                    badge = "🏛️";
+                    title = "Bapak Pembangunan IKN Nusantara";
+                }
+                triggerEnding("🎉 JABATAN PRESIDEN 5 TAHUN SELESAI!", badge, title, desc);
+            }
+        }
+
+        function triggerEnding(heading, badge, title, desc) {
+            audio.success();
+            document.getElementById('ending-title').innerText = heading;
+            document.getElementById('ending-badge').innerText = badge;
+            document.getElementById('ending-subtitle').innerText = title;
+            document.getElementById('ending-desc').innerText = desc;
+
+            const finalApp = calculateOverallApproval();
+            document.getElementById('ending-stats').innerHTML = `
+                <div>📊 Approval Akhir Rakyat: <b>${finalApp}%</b></div>
+                <div>💰 Sisa Kas APBN: <b>Rp ${state.apbn} Triliun</b></div>
+                <div>📈 Pertumbuhan GDP: <b>${state.gdpGrowth}%</b></div>
+                <div>🏛️ Progres IKN Nusantara: <b>${Math.round(state.iknProgress)}%</b></div>
+            `;
+            document.getElementById('modal-ending').classList.remove('hidden');
+        }
+
+        /* UI RENDERERS & HELPERS */
+        function renderAll() {
+            const overallApp = calculateOverallApproval();
+
+            document.getElementById('display-date').innerText = `Bulan ${state.month} / 60 (${getMonthYearString(state.month)})`;
+            document.getElementById('stat-approval').innerText = overallApp + '%';
+            document.getElementById('bar-approval').style.width = overallApp + '%';
+
+            document.getElementById('stat-apbn').innerText = `Rp ${state.apbn.toLocaleString('id-ID')} T`;
+            document.getElementById('stat-gdp').innerText = state.gdpGrowth.toFixed(1) + '%';
+            document.getElementById('stat-inflation').innerText = state.inflation.toFixed(1) + '%';
+
+            document.getElementById('stat-dpr').innerText = state.dprSupport + '%';
+            document.getElementById('bar-dpr').style.width = state.dprSupport + '%';
+
+            document.getElementById('stat-ipk').innerText = state.ipk + '/100';
+            document.getElementById('bar-ipk').style.width = state.ipk + '%';
+
+            document.getElementById('stat-ikn').innerText = Math.round(state.iknProgress) + '%';
+            document.getElementById('bar-ikn').style.width = state.iknProgress + '%';
+
+            document.getElementById('stat-pangan').innerText = state.foodSecurity + '%';
+            document.getElementById('stat-militer').innerText = state.militarySecurity + '%';
+
+            document.getElementById('map-blusukan-pts').innerText = state.blusukanPoints;
+
+            document.getElementById('group-buruh').innerText = state.approval.buruh + '%';
+            document.getElementById('group-petani').innerText = state.approval.petani + '%';
+            document.getElementById('group-menengah').innerText = state.approval.menengah + '%';
+            document.getElementById('group-pengusaha').innerText = state.approval.pengusaha + '%';
+            document.getElementById('group-mahasiswa').innerText = state.approval.mahasiswa + '%';
+            document.getElementById('group-ulama').innerText = state.approval.ulama + '%';
+
+            const anyCrisis = state.regions.some(r => r.crisis !== null);
+            document.getElementById('map-crisis-badge').classList.toggle('hidden', !anyCrisis);
+
+            if (state.newsFeed.length > 0) {
+                document.getElementById('tv-news-headline').innerText = `"${state.newsFeed[0]}"`;
+                document.getElementById('tv-news-ticker').innerText = state.newsFeed.join("  ///  ");
+            }
+
+            renderLaws();
+            renderCabinet();
+            renderDiplomacy();
+            updateEconomicSliders();
+        }
+
+        function renderLaws() {
+            const grid = document.getElementById('laws-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            LAWS_DATABASE.forEach(law => {
+                const isPassed = state.passedLaws.includes(law.id);
+                const card = document.createElement('div');
+                card.className = `pixel-card p-2.5 flex flex-col justify-between ${isPassed ? 'bg-emerald-950/40 border-emerald-600' : 'bg-slate-950'}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-yellow-300 text-xs">${law.title}</span>
+                            <span class="text-[9px] ${isPassed ? 'text-emerald-400 font-bold' : 'text-slate-500'}">
+                                ${isPassed ? 'BERLAKU' : 'BELUM DISAHKAN'}
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-300 mb-1">${law.desc}</p>
+                        <div class="text-[9px] text-cyan-400">Dampak: ${law.impactDesc}</div>
+                    </div>
+                    <button onclick="toggleLaw('${law.id}')" class="pixel-btn mt-2 w-full py-1 text-xs ${isPassed ? 'bg-red-800 text-white' : 'bg-emerald-700 text-white'}">
+                        ${isPassed ? 'Cabut UU' : '✍️ Sahkan UU'}
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleLaw(lawId) {
+            audio.click();
+            const law = LAWS_DATABASE.find(l => l.id === lawId);
+            if (!law) return;
+
+            if (state.passedLaws.includes(lawId)) {
+                state.passedLaws = state.passedLaws.filter(id => id !== lawId);
+                showToast(`Pemerintah mencabut ${law.title}.`);
+            } else {
+                if (state.apbn < law.cost) {
+                    showToast("Kas APBN tidak cukup!");
+                    return;
+                }
+                state.apbn -= law.cost;
+                state.passedLaws.push(lawId);
+                showToast(`RESMI: ${law.title} disahkan Presiden!`);
+            }
+            autoSave();
+            renderAll();
+        }
+
+        function renderCabinet() {
+            const list = document.getElementById('cabinet-list');
+            if (!list) return;
+            list.innerHTML = '';
+            state.ministers.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'pixel-card p-2.5 bg-slate-950 flex justify-between items-center text-xs';
+                card.innerHTML = `
+                    <div>
+                        <div class="text-[9px] text-slate-400">${m.title.toUpperCase()}</div>
+                        <div class="font-bold text-yellow-300">${m.name} (${m.party})</div>
+                        <div class="text-[9px] text-slate-400">Kompetensi: ${m.competence} | Loyalitas: ${m.loyalty}</div>
+                    </div>
+                    <button onclick="openReshuffleModal('${m.id}')" class="pixel-btn bg-amber-700 text-white px-2 py-1 text-[9px]">Reshuffle</button>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function renderDiplomacy() {
+            const grid = document.getElementById('diplomacy-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const powers = [
+                { id: 'usa', name: '🇺🇸 Amerika Serikat', stat: state.diplomacy.usa },
+                { id: 'china', name: '🇨🇳 Tiongkok (China)', stat: state.diplomacy.china },
+                { id: 'brics', name: '🇧🇷 Blok BRICS', stat: state.diplomacy.brics },
+                { id: 'asean', name: '🇮🇩 KTT ASEAN', stat: state.diplomacy.asean }
+            ];
+            powers.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'pixel-card p-2.5 bg-slate-950 space-y-1.5 text-xs';
+                card.innerHTML = `
+                    <div class="flex justify-between">
+                        <span class="font-bold text-yellow-300">${p.name}</span>
+                        <span class="text-cyan-400 font-bold">${p.stat}% Hubungan</span>
+                    </div>
+                    <div class="pixel-progress-bg">
+                        <div class="pixel-progress-fill bg-cyan-500" style="width: ${p.stat}%"></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateEconomicSliders() {
+            state.ppnRate = parseInt(document.getElementById('slider-ppn').value);
+            state.pphRate = parseInt(document.getElementById('slider-pph').value);
+            state.subBbm = parseInt(document.getElementById('slider-sub-bbm').value);
+            state.subPangan = parseInt(document.getElementById('slider-sub-pangan').value);
+
+            state.budgetEdu = parseInt(document.getElementById('slider-budget-edu').value);
+            state.budgetHealth = parseInt(document.getElementById('slider-budget-health').value);
+            state.budgetInfra = parseInt(document.getElementById('slider-budget-infra').value);
+            state.budgetDefense = parseInt(document.getElementById('slider-budget-defense').value);
+
+            document.getElementById('val-ppn').innerText = state.ppnRate + '%';
+            document.getElementById('val-pph').innerText = state.pphRate + '%';
+            document.getElementById('val-budget-edu').innerText = state.budgetEdu + '%';
+            document.getElementById('val-budget-health').innerText = state.budgetHealth + '%';
+            document.getElementById('val-budget-infra').innerText = state.budgetInfra + '%';
+            document.getElementById('val-budget-defense').innerText = state.budgetDefense + '%';
+            
+            autoSave();
+        }
+
+        function switchTab(tabId) {
+            audio.click();
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('bg-red-900', 'text-yellow-300');
+                btn.classList.add('bg-slate-800', 'text-slate-200');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-800', 'text-slate-200');
+                activeBtn.classList.add('bg-red-900', 'text-yellow-300');
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('custom-toast');
+            document.getElementById('toast-text').innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3500);
+        }
+
+        function addNews(headline) {
+            state.newsFeed.unshift(headline);
+            if (state.newsFeed.length > 8) state.newsFeed.pop();
+        }
+
+        function getMonthYearString(m) {
+            const date = new Date(2024, 10 + m - 1, 1);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function setupOfficeCanvas() {
+            const canvas = document.getElementById('canvas-office');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            ctx.fillStyle = '#1e1b18';
+            ctx.fillRect(0, 0, canvas.width, canvas.height * 0.7);
+            ctx.fillStyle = '#451a03';
+            ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height * 0.25, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#543818';
+            ctx.fillRect(canvas.width * 0.25, canvas.height * 0.55, canvas.width * 0.5, canvas.height * 0.25);
+        }
+
+        window.onload = function() {
+            initMapCanvas();
+            setupOfficeCanvas();
+            checkSaveOnStartup();
+        };
+    </script>
+</body>
+</html>
